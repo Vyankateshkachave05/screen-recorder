@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Recorder</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #video-container {
+            width: 80%;
+            height: 600px;
+            border: 1px solid black;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Screen Recorder</h1>
+        <button id="start-button" class="btn btn-primary">Start Recording</button>
+        <button id="stop-button" class="btn btn-danger" disabled>Stop Recording</button>
+        <div id="video-container">
+            <video id="video" width="100%" height="100%"></video>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let mediaRecorder;
+        let recordedBlobs;
+
+        async function startRecording() {
+            try {
+                const displayMediaOptions = {
+                    video: {
+                        mediaSource: 'screen'
+                    }
+                };
+                const captureStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+                const video = document.querySelector('video');
+                video.srcObject = captureStream;
+                video.play();
+
+                const options = {
+                    mimeType: 'video/webm'
+                };
+                recordedBlobs = [];
+                mediaRecorder = new MediaRecorder(captureStream, options);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size > 0) {
+                        recordedBlobs.push(event.data);
+                    }
+                };
+
+                mediaRecorder.start(100);
+            } catch (error) {
+                console.error('Error starting recording:', error);
+            }
+        }
+
+        async function stopRecording() {
+            mediaRecorder.stop();
+            const blob = new Blob(recordedBlobs, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'screen_recording.webm';
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            startRecording();
+            document.getElementById('start-button').disabled = true;
+            document.getElementById('stop-button').disabled = false;
+        });
+
+        document.getElementById('stop-button').addEventListener('click', () => {
+            stopRecording();
+            document.getElementById('start-button').disabled = false;
+            document.getElementById('stop-button').disabled = true;
+        });
+    </script>
+</body>
+</html>
